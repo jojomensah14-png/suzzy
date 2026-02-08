@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-
+import suzzyAvatar from "@/assets/suzzy-avatar.png";
 interface AIAvatarProps {
   isSpeaking: boolean;
   isListening: boolean;
@@ -66,8 +66,8 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
             : { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
         }
       >
-        <div className="w-full h-full rounded-full bg-gradient-to-br from-primary via-rose-gold to-warm-gold flex items-center justify-center">
-          <span className="text-2xl">💋</span>
+        <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary/30">
+          <img src={suzzyAvatar} alt="Suzzy" className="w-full h-full object-cover" />
         </div>
       </motion.div>
 
