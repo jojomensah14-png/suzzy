@@ -55,7 +55,7 @@ export default function SessionPage() {
       setIsSessionActive(true);
       // Send initial greeting
       const greeting = await sendMessage(
-        "Hi! I just started my makeup session. Please introduce yourself and ask what look I'm going for today.",
+        "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.",
         faceContext
       );
       if (greeting) {
@@ -89,11 +89,12 @@ export default function SessionPage() {
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-warm-gold flex items-center justify-center text-sm">
-            ✨
+            💋
           </div>
           <h1 className="font-display text-lg tracking-wide text-foreground">
-            AI Makeup Coach
+            Suzzy
           </h1>
+          <span className="text-xs text-muted-foreground font-sans">Your AI Makeup Assistant</span>
         </div>
         <div className="flex items-center gap-4">
           <AIAvatar

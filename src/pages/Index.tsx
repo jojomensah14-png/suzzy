@@ -1,28 +1,28 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Camera, Mic, Wand2, Star } from "lucide-react";
+import { Camera, Mic, Wand2, Heart } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const features = [
   {
     icon: <Camera size={20} />,
-    title: "Live Camera",
-    description: "Real-time face tracking with visual makeup guides",
+    title: "See You, Babe",
+    description: "Live camera with face tracking & visual makeup guides",
   },
   {
     icon: <Mic size={20} />,
-    title: "Voice Coaching",
-    description: "Speak naturally — no typing needed",
+    title: "Just Talk",
+    description: "No typing — speak naturally, Suzzy listens",
   },
   {
     icon: <Wand2 size={20} />,
-    title: "Smart Guidance",
-    description: "AI reacts to your face position, lighting & blending",
+    title: "Real-Time Tips",
+    description: "Suzzy reacts to your face, lighting & blending live",
   },
   {
-    icon: <Star size={20} />,
-    title: "Pro Techniques",
-    description: "Learn contouring, eyeshadow, liner & more",
+    icon: <Heart size={20} />,
+    title: "Pro Looks",
+    description: "Contouring, eyeshadow, liner & more — step by step",
   },
 ];
 
@@ -38,9 +38,10 @@ const Index = () => {
       </div>
 
       {/* Background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20 pointer-events-none"
+      <div
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-20 pointer-events-none"
         style={{
-          background: "radial-gradient(circle, hsl(var(--rose-gold) / 0.3) 0%, transparent 70%)"
+          background: "radial-gradient(circle, hsl(var(--rose-gold) / 0.3) 0%, transparent 70%)",
         }}
       />
 
@@ -51,47 +52,71 @@ const Index = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        {/* Logo */}
+        {/* Suzzy avatar */}
         <motion.div
-          className="w-20 h-20 mx-auto mb-8 rounded-full bg-gradient-to-br from-primary via-rose-gold to-warm-gold flex items-center justify-center animate-pulse-glow"
+          className="w-24 h-24 mx-auto mb-6 rounded-full animate-pulse-glow relative"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         >
-          <Sparkles size={32} className="text-primary-foreground" />
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-primary via-rose-gold to-warm-gold flex items-center justify-center">
+            <span className="text-4xl">💋</span>
+          </div>
+          {/* Online dot */}
+          <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-primary border-2 border-background" />
+        </motion.div>
+
+        {/* Greeting tag */}
+        <motion.div
+          className="inline-block mb-5 px-4 py-1.5 rounded-full glass-panel text-xs font-medium tracking-widest uppercase text-primary"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.35 }}
+        >
+          Hey gorgeous, I'm ready ✨
         </motion.div>
 
         <motion.h1
-          className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4"
+          className="font-display text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-3"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <span className="text-gradient-rose">AI Makeup</span>
-          <br />
-          <span className="text-foreground">Coach</span>
+          <span className="text-gradient-rose">Suzzy</span>
         </motion.h1>
 
         <motion.p
-          className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto mb-10 leading-relaxed"
+          className="font-display text-xl md:text-2xl text-foreground/70 italic mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+        >
+          Your AI Makeup Assistant
+        </motion.p>
+
+        <motion.p
+          className="text-base md:text-lg text-muted-foreground max-w-lg mx-auto mb-10 leading-relaxed"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          Your personal AI makeup artist. Real-time voice coaching while you apply — like FaceTime with a pro.
+          Like FaceTime with your glam bestie — Suzzy watches, coaches, and hypes you up while you slay your look.
         </motion.p>
 
         {/* CTA */}
         <motion.button
           onClick={() => navigate("/session")}
-          className="px-10 py-4 rounded-full bg-gradient-to-r from-primary to-rose-gold text-primary-foreground font-semibold text-base tracking-wide hover:shadow-xl hover:shadow-primary/20 transition-all"
+          className="group px-10 py-4 rounded-full bg-gradient-to-r from-primary to-rose-gold text-primary-foreground font-semibold text-base tracking-wide hover:shadow-xl hover:shadow-primary/20 transition-all relative overflow-hidden"
           whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.97 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          Start Your Session ✨
+          <span className="relative z-10">Hey Suzzy, Let's Glow 💅</span>
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-rose-gold to-warm-gold opacity-0 group-hover:opacity-100 transition-opacity"
+          />
         </motion.button>
       </motion.div>
 
@@ -131,7 +156,7 @@ const Index = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 1.3 }}
       >
-        Requires camera & microphone access • Works best in Chrome
+        Requires camera & microphone · Works best in Chrome · Made with 💋 by Suzzy
       </motion.p>
     </div>
   );
