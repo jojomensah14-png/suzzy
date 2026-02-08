@@ -8,6 +8,7 @@ import { FaceStatusBar } from "@/components/FaceStatusBar";
 import { useCamera } from "@/hooks/useCamera";
 import { useVoice } from "@/hooks/useVoice";
 import { useMakeupCoach } from "@/hooks/useMakeupCoach";
+import suzzyIcon from "@/assets/suzzy-icon.png";
 
 export default function SessionPage() {
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -88,8 +89,8 @@ export default function SessionPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-warm-gold flex items-center justify-center text-sm">
-            💋
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
+            <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
           </div>
           <h1 className="font-display text-lg tracking-wide text-foreground">
             Suzzy

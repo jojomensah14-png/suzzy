@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Camera, Mic, Wand2, Heart } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import suzzyAvatar from "@/assets/suzzy-avatar.png";
 
 const features = [
   {
@@ -59,8 +60,8 @@ const Index = () => {
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         >
-          <div className="w-full h-full rounded-full bg-gradient-to-br from-primary via-rose-gold to-warm-gold flex items-center justify-center">
-            <span className="text-4xl">💋</span>
+          <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary/30">
+            <img src={suzzyAvatar} alt="Suzzy" className="w-full h-full object-cover" />
           </div>
           {/* Online dot */}
           <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-primary border-2 border-background" />
