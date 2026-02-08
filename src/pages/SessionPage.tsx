@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { CameraView } from "@/components/CameraView";
 import { AIAvatar } from "@/components/AIAvatar";
 import { SessionControls } from "@/components/SessionControls";
@@ -11,65 +13,104 @@ import { useMakeupCoach } from "@/hooks/useMakeupCoach";
 import suzzyIcon from "@/assets/suzzy-icon.png";
 
 export default function SessionPage() {
+  const navigate = useNavigate();
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [showPermissionPrompt, setShowPermissionPrompt] = useState(true);
+  const isSessionActiveRef = useRef(false);
+  const isMutedRef = useRef(false);
+
   const { videoRef, canvasRef, isStreaming, faceContext, startCamera, stopCamera, error: cameraError } = useCamera();
   const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, isMuted, toggleMute, error: voiceError } = useVoice();
   const { messages, isLoading, sendMessage, error: coachError } = useMakeupCoach();
   const lastTranscriptRef = useRef("");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const processingRef = useRef(false);
 
-  // Handle transcript changes - send to AI after user pauses speaking
+  // Keep refs in sync
   useEffect(() => {
-    if (transcript && transcript !== lastTranscriptRef.current && isSessionActive) {
-      lastTranscriptRef.current = transcript;
+    isSessionActiveRef.current = isSessionActive;
+  }, [isSessionActive]);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  // Handle transcript changes — send to AI after user pauses
+  useEffect(() => {
+    if (!transcript || transcript === lastTranscriptRef.current || !isSessionActive || processingRef.current) return;
+
+    lastTranscriptRef.current = transcript;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      if (!isSessionActiveRef.current || processingRef.current) return;
+      processingRef.current = true;
+      stopListening();
+
+      const response = await sendMessage(transcript, faceContext);
+      lastTranscriptRef.current = "";
       
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      
-      debounceRef.current = setTimeout(async () => {
-        stopListening();
-        const response = await sendMessage(transcript, faceContext);
-        if (response) {
-          speak(response);
-          // Restart listening after speaking
-          const speakDuration = response.length * 60; // rough estimate
-          setTimeout(() => {
-            if (isSessionActive && !isMuted) {
-              startListening();
-            }
-          }, speakDuration);
-        } else {
-          if (!isMuted) startListening();
+      if (response && isSessionActiveRef.current) {
+        speak(response, () => {
+          processingRef.current = false;
+          if (isSessionActiveRef.current && !isMutedRef.current) {
+            startListening();
+          }
+        });
+      } else {
+        processingRef.current = false;
+        if (isSessionActiveRef.current && !isMutedRef.current) {
+          startListening();
         }
-        lastTranscriptRef.current = "";
-      }, 1500);
-    }
+      }
+    }, 1800);
   }, [transcript, isSessionActive]);
 
-  const handleToggleSession = useCallback(async () => {
-    if (isSessionActive) {
-      stopListening();
-      stopSpeaking();
-      stopCamera();
-      setIsSessionActive(false);
-    } else {
-      await startCamera();
-      setIsSessionActive(true);
-      // Send initial greeting
-      const greeting = await sendMessage(
-        "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.",
-        faceContext
-      );
-      if (greeting) {
-        speak(greeting);
-        const speakDuration = greeting.length * 60;
-        setTimeout(() => {
-          if (!isMuted) startListening();
-        }, speakDuration);
-      } else {
-        if (!isMuted) startListening();
-      }
+  const handleStartSession = useCallback(async () => {
+    setShowPermissionPrompt(false);
+    try {
+      // Request mic permission alongside camera
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      // Voice will show its own error
     }
-  }, [isSessionActive, startCamera, stopCamera, startListening, stopListening, speak, stopSpeaking, sendMessage, faceContext, isMuted]);
+
+    await startCamera();
+    setIsSessionActive(true);
+    processingRef.current = true;
+
+    const greeting = await sendMessage(
+      "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.",
+      faceContext
+    );
+
+    if (greeting) {
+      speak(greeting, () => {
+        processingRef.current = false;
+        if (isSessionActiveRef.current && !isMutedRef.current) {
+          startListening();
+        }
+      });
+    } else {
+      processingRef.current = false;
+      if (!isMutedRef.current) startListening();
+    }
+  }, [startCamera, speak, sendMessage, faceContext, startListening]);
+
+  const handleEndSession = useCallback(() => {
+    stopListening();
+    stopSpeaking();
+    stopCamera();
+    setIsSessionActive(false);
+    processingRef.current = false;
+  }, [stopListening, stopSpeaking, stopCamera]);
+
+  const handleToggleSession = useCallback(() => {
+    if (isSessionActive) {
+      handleEndSession();
+    } else {
+      handleStartSession();
+    }
+  }, [isSessionActive, handleStartSession, handleEndSession]);
 
   const handleToggleCamera = useCallback(() => {
     if (isStreaming) {
@@ -83,19 +124,32 @@ export default function SessionPage() {
     <div className="h-screen w-screen bg-gradient-luxe flex flex-col overflow-hidden">
       {/* Header */}
       <motion.header
-        className="flex items-center justify-between px-6 py-4 z-10"
+        className="flex items-center justify-between px-4 md:px-6 py-3 z-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/")}
+            className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            title="Back to home"
+          >
+            <ArrowLeft size={16} />
+          </button>
           <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
             <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
           </div>
-          <h1 className="font-display text-lg tracking-wide text-foreground">
-            Suzzy
-          </h1>
-          <span className="text-xs text-muted-foreground font-sans">Your AI Makeup Assistant</span>
+          <div>
+            <h1 className="font-display text-base tracking-wide text-foreground leading-tight">
+              Suzzy
+            </h1>
+            <span className="text-[10px] text-muted-foreground font-sans leading-tight">
+              {isSessionActive
+                ? isSpeaking ? "Speaking..." : isListening ? "Listening to you..." : isLoading ? "Thinking..." : "Ready"
+                : "Your AI Makeup Assistant"}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <AIAvatar
@@ -107,9 +161,9 @@ export default function SessionPage() {
       </motion.header>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 px-4 pb-4 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 px-3 md:px-4 pb-3 min-h-0">
         {/* Camera area */}
-        <div className="flex-1 relative min-h-0">
+        <div className="flex-1 relative min-h-0 rounded-2xl overflow-hidden">
           <CameraView
             videoRef={videoRef}
             canvasRef={canvasRef}
@@ -119,18 +173,70 @@ export default function SessionPage() {
             faceContext={faceContext}
             isVisible={isSessionActive && isStreaming}
           />
+
+          {/* Pre-session welcome overlay */}
+          <AnimatePresence>
+            {!isSessionActive && showPermissionPrompt && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-2xl z-10"
+              >
+                <div className="text-center max-w-sm px-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary/30 animate-pulse-glow">
+                    <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
+                  </div>
+                  <h2 className="font-display text-xl text-foreground mb-2">Ready to glow up?</h2>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Suzzy needs your <strong className="text-foreground">camera</strong> and <strong className="text-foreground">microphone</strong> to coach you live.
+                  </p>
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground/70 mt-3 mb-6">
+                    <Info size={12} />
+                    <span>Your video stays on your device — never recorded or stored</span>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleStartSession}
+                    className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-rose-gold text-primary-foreground font-semibold text-sm tracking-wide hover:shadow-lg hover:shadow-primary/25 transition-all"
+                  >
+                    Let's Go, Suzzy! 💅
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Current transcript overlay */}
+          <AnimatePresence>
+            {isListening && transcript && !processingRef.current && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-4 left-4 right-4 z-10"
+              >
+                <div className="glass-panel-strong px-4 py-2.5 rounded-xl text-sm text-foreground/90 text-center">
+                  🎤 {transcript}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Side panel on desktop */}
+        {/* Side panel */}
         <AnimatePresence>
           {isSessionActive && messages.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="w-full lg:w-80 glass-panel-strong p-4 rounded-2xl overflow-hidden flex flex-col"
+              initial={{ opacity: 0, x: 20, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: "auto" }}
+              exit={{ opacity: 0, x: 20, width: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full lg:w-80 glass-panel-strong p-4 rounded-2xl overflow-hidden flex flex-col max-h-[30vh] lg:max-h-full"
             >
-              <h2 className="text-sm font-medium text-muted-foreground mb-3 tracking-wide uppercase">
+              <h2 className="text-xs font-medium text-muted-foreground mb-3 tracking-widest uppercase flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                 Conversation
               </h2>
               <div className="flex-1 min-h-0 overflow-hidden">
@@ -147,7 +253,7 @@ export default function SessionPage() {
 
       {/* Controls bar */}
       <motion.div
-        className="flex items-center justify-center gap-4 px-6 py-5"
+        className="flex items-center justify-center gap-4 px-4 py-4 md:py-5"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -170,9 +276,9 @@ export default function SessionPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 glass-panel-strong px-6 py-3 rounded-xl text-sm text-foreground max-w-md text-center"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 glass-panel-strong px-6 py-3 rounded-xl text-sm text-foreground max-w-md text-center z-50"
           >
-            {cameraError || voiceError}
+            ⚠️ {cameraError || voiceError}
           </motion.div>
         )}
       </AnimatePresence>

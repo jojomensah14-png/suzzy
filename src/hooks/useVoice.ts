@@ -6,7 +6,7 @@ interface UseVoiceReturn {
   isSpeaking: boolean;
   startListening: () => void;
   stopListening: () => void;
-  speak: (text: string) => void;
+  speak: (text: string, onDone?: () => void) => void;
   stopSpeaking: () => void;
   isMuted: boolean;
   toggleMute: () => void;
@@ -20,11 +20,15 @@ export function useVoice(): UseVoiceReturn {
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const shouldRestartRef = useRef(false);
 
+  // Pre-load voices
   useEffect(() => {
+    window.speechSynthesis.getVoices();
+    const handleVoices = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", handleVoices);
     return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", handleVoices);
       if (recognitionRef.current) {
         shouldRestartRef.current = false;
         recognitionRef.current.abort();
@@ -35,10 +39,16 @@ export function useVoice(): UseVoiceReturn {
 
   const startListening = useCallback(() => {
     if (isMuted) return;
-    
+
+    // Stop any existing recognition first
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      recognitionRef.current = null;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setError("Speech recognition not supported in this browser.");
+      setError("Speech recognition is not supported in this browser. Try Chrome.");
       return;
     }
 
@@ -48,7 +58,7 @@ export function useVoice(): UseVoiceReturn {
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: any) => {
         let finalTranscript = "";
         let interimTranscript = "";
 
@@ -71,7 +81,9 @@ export function useVoice(): UseVoiceReturn {
       recognition.onend = () => {
         if (shouldRestartRef.current && !isMuted) {
           try {
-            recognition.start();
+            setTimeout(() => {
+              if (shouldRestartRef.current) recognition.start();
+            }, 100);
           } catch {
             setIsListening(false);
           }
@@ -80,7 +92,7 @@ export function useVoice(): UseVoiceReturn {
         }
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: any) => {
         if (event.error !== "aborted" && event.error !== "no-speech") {
           console.error("Speech recognition error:", event.error);
         }
@@ -100,23 +112,28 @@ export function useVoice(): UseVoiceReturn {
   const stopListening = useCallback(() => {
     shouldRestartRef.current = false;
     if (recognitionRef.current) {
-      recognitionRef.current.abort();
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
       recognitionRef.current = null;
     }
     setIsListening(false);
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (isMuted) return;
-    
+  const speak = useCallback((text: string, onDone?: () => void) => {
+    if (isMuted) {
+      onDone?.();
+      return;
+    }
+
+    // Stop listening while speaking to prevent feedback
+    stopListening();
     window.speechSynthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.1;
     utterance.volume = 0.9;
 
-    // Try to pick a nice female voice
+    // Pick a nice female voice
     const voices = window.speechSynthesis.getVoices();
     const preferred = voices.find(
       (v) =>
@@ -124,17 +141,23 @@ export function useVoice(): UseVoiceReturn {
         v.name.includes("Karen") ||
         v.name.includes("Moira") ||
         v.name.includes("Google UK English Female") ||
-        v.name.includes("Microsoft Zira")
+        v.name.includes("Microsoft Zira") ||
+        (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
     );
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      onDone?.();
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      onDone?.();
+    };
 
-    synthRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [isMuted]);
+  }, [isMuted, stopListening]);
 
   const stopSpeaking = useCallback(() => {
     window.speechSynthesis.cancel();
@@ -164,5 +187,3 @@ export function useVoice(): UseVoiceReturn {
     error,
   };
 }
-
-// Types are declared in vite-env.d.ts
