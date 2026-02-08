@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// deno-lint-ignore-file
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,7 +31,7 @@ When given face context (position, lighting, etc.), incorporate it naturally:
 
 Always be supportive and make the user feel beautiful and confident.`;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
