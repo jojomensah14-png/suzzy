@@ -67,7 +67,7 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
         }
       >
         <div className="w-full h-full rounded-full bg-gradient-to-br from-primary via-rose-gold to-warm-gold flex items-center justify-center">
-          <span className="text-2xl">✨</span>
+          <span className="text-2xl">💋</span>
         </div>
       </motion.div>
 
@@ -80,7 +80,7 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
         {isLoading ? (
           <span className="text-muted-foreground">Thinking...</span>
         ) : isSpeaking ? (
-          <span className="text-gradient-rose font-semibold">Glow is speaking</span>
+          <span className="text-gradient-rose font-semibold">Suzzy is speaking</span>
         ) : isListening ? (
           <span className="text-primary">Listening...</span>
         ) : (
