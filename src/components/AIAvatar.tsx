@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import suzzyAvatar from "@/assets/suzzy-avatar.png";
+
 interface AIAvatarProps {
   isSpeaking: boolean;
   isListening: boolean;
@@ -7,85 +8,66 @@ interface AIAvatarProps {
 }
 
 export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) {
-  const ringCount = 3;
-
   return (
     <div className="relative flex items-center justify-center">
       {/* Outer glow rings */}
-      {Array.from({ length: ringCount }).map((_, i) => (
+      {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
           className="absolute rounded-full border border-primary/20"
           style={{
-            width: `${80 + i * 24}px`,
-            height: `${80 + i * 24}px`,
+            width: `${72 + i * 20}px`,
+            height: `${72 + i * 20}px`,
           }}
           animate={
             isSpeaking
               ? {
-                  scale: [1, 1.1 + i * 0.05, 1],
-                  opacity: [0.3, 0.6 - i * 0.1, 0.3],
+                  scale: [1, 1.08 + i * 0.04, 1],
+                  opacity: [0.25, 0.55 - i * 0.12, 0.25],
                   borderColor: [
-                    "hsl(var(--rose-gold) / 0.2)",
-                    "hsl(var(--rose-gold) / 0.5)",
-                    "hsl(var(--rose-gold) / 0.2)",
+                    "hsl(var(--rose-gold) / 0.15)",
+                    "hsl(var(--rose-gold) / 0.45)",
+                    "hsl(var(--rose-gold) / 0.15)",
                   ],
                 }
               : isListening
               ? {
-                  scale: [1, 1.03, 1],
-                  opacity: [0.2, 0.35, 0.2],
+                  scale: [1, 1.02, 1],
+                  opacity: [0.15, 0.3, 0.15],
                 }
-              : { scale: 1, opacity: 0.15 }
+              : { scale: 1, opacity: 0.1 }
           }
           transition={{
-            duration: isSpeaking ? 1.2 : 2,
+            duration: isSpeaking ? 1 : 2.5,
             repeat: Infinity,
-            delay: i * 0.2,
+            delay: i * 0.15,
             ease: "easeInOut",
           }}
         />
       ))}
 
-      {/* Main avatar circle */}
+      {/* Main avatar */}
       <motion.div
-        className={`relative z-10 flex items-center justify-center rounded-full ${
+        className={`relative z-10 rounded-full overflow-hidden ${
           isSpeaking ? "glow-ring-active" : isListening ? "glow-ring" : ""
         }`}
-        style={{ width: 72, height: 72 }}
+        style={{ width: 64, height: 64 }}
         animate={
           isLoading
             ? { rotate: 360 }
             : isSpeaking
-            ? { scale: [1, 1.05, 1] }
+            ? { scale: [1, 1.04, 1] }
             : {}
         }
         transition={
           isLoading
             ? { duration: 2, repeat: Infinity, ease: "linear" }
-            : { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 1, repeat: Infinity, ease: "easeInOut" }
         }
       >
         <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary/30">
           <img src={suzzyAvatar} alt="Suzzy" className="w-full h-full object-cover" />
         </div>
-      </motion.div>
-
-      {/* Status label */}
-      <motion.div
-        className="absolute -bottom-7 whitespace-nowrap text-xs font-medium tracking-wide"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        {isLoading ? (
-          <span className="text-muted-foreground">Thinking...</span>
-        ) : isSpeaking ? (
-          <span className="text-gradient-rose font-semibold">Suzzy is speaking</span>
-        ) : isListening ? (
-          <span className="text-primary">Listening...</span>
-        ) : (
-          <span className="text-muted-foreground">Ready</span>
-        )}
       </motion.div>
     </div>
   );
