@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, Info, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CameraView } from "@/components/CameraView";
 import { AIAvatar } from "@/components/AIAvatar";
@@ -16,6 +16,7 @@ export default function SessionPage() {
   const navigate = useNavigate();
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(true);
+  const [chatInput, setChatInput] = useState("");
   const isSessionActiveRef = useRef(false);
   const isMutedRef = useRef(false);
 
@@ -227,7 +228,7 @@ export default function SessionPage() {
 
         {/* Side panel */}
         <AnimatePresence>
-          {isSessionActive && messages.length > 0 && (
+        {isSessionActive && (
             <motion.div
               initial={{ opacity: 0, x: 20, width: 0 }}
               animate={{ opacity: 1, x: 0, width: "auto" }}
@@ -246,6 +247,48 @@ export default function SessionPage() {
                   error={coachError}
                 />
               </div>
+              {/* Text chat input */}
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const text = chatInput.trim();
+                  if (!text || isLoading) return;
+                  setChatInput("");
+                  stopListening();
+                  processingRef.current = true;
+                  const response = await sendMessage(text, faceContext);
+                  if (response && isSessionActiveRef.current) {
+                    speak(response, () => {
+                      processingRef.current = false;
+                      if (isSessionActiveRef.current && !isMutedRef.current) {
+                        startListening();
+                      }
+                    });
+                  } else {
+                    processingRef.current = false;
+                    if (isSessionActiveRef.current && !isMutedRef.current) {
+                      startListening();
+                    }
+                  }
+                }}
+                className="flex gap-2 mt-3 pt-3 border-t border-border/30"
+              >
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-background/50 border border-border/30 rounded-full px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !chatInput.trim()}
+                  className="w-9 h-9 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Send size={14} />
+                </button>
+              </form>
             </motion.div>
           )}
         </AnimatePresence>
