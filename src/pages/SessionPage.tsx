@@ -133,22 +133,22 @@ export default function SessionPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
-            className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            className="w-8 h-8 rounded-full glass-panel flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors shadow-luxury"
             title="Back to home"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30">
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-primary/30 shadow-luxury">
             <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="font-display text-base tracking-wide text-foreground leading-tight">
               Suzzy
             </h1>
-            <span className="text-[10px] text-muted-foreground font-sans leading-tight">
+            <span className="text-[10px] text-muted-foreground font-sans leading-tight tracking-wide">
               {isSessionActive
                 ? isSpeaking ? "Speaking..." : isListening ? "Listening to you..." : isLoading ? "Thinking..." : "Ready"
-                : "Your AI Makeup Assistant"}
+                : "Your AI Beauty Assistant"}
             </span>
           </div>
         </div>
@@ -185,10 +185,10 @@ export default function SessionPage() {
                 className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-2xl z-10"
               >
                 <div className="text-center max-w-sm px-6">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary/30 animate-pulse-glow">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden border-2 border-primary/30 animate-pulse-glow shadow-luxury-lg">
                     <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
                   </div>
-                  <h2 className="font-display text-xl text-foreground mb-2">Ready to glow up?</h2>
+                  <h2 className="font-display text-2xl text-foreground mb-2">Ready to glow up?</h2>
                   <p className="text-sm text-muted-foreground mb-1">
                     Suzzy needs your <strong className="text-foreground">camera</strong> and <strong className="text-foreground">microphone</strong> to coach you live.
                   </p>
@@ -200,7 +200,7 @@ export default function SessionPage() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleStartSession}
-                    className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-rose-gold text-primary-foreground font-semibold text-sm tracking-wide hover:shadow-lg hover:shadow-primary/25 transition-all"
+                    className="px-8 py-3.5 rounded-full btn-luxury text-primary-foreground font-semibold text-sm tracking-wide"
                   >
                     Let's Go, Suzzy! 💅
                   </motion.button>
@@ -271,20 +271,20 @@ export default function SessionPage() {
                     }
                   }
                 }}
-                className="flex gap-2 mt-3 pt-3 border-t border-border/30"
+                className="flex gap-2 mt-3 pt-3 border-t border-primary/10"
               >
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Type a message..."
-                  className="flex-1 bg-background/50 border border-border/30 rounded-full px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="flex-1 bg-background/40 border border-primary/15 rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/30 transition-all"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !chatInput.trim()}
-                  className="w-9 h-9 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-9 h-9 rounded-full btn-luxury text-primary-foreground flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Send size={14} />
                 </button>

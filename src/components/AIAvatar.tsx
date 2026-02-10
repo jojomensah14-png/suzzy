@@ -14,7 +14,7 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full border border-primary/20"
+          className="absolute rounded-full border border-primary/15"
           style={{
             width: `${72 + i * 20}px`,
             height: `${72 + i * 20}px`,
@@ -23,19 +23,19 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
             isSpeaking
               ? {
                   scale: [1, 1.08 + i * 0.04, 1],
-                  opacity: [0.25, 0.55 - i * 0.12, 0.25],
+                  opacity: [0.2, 0.5 - i * 0.1, 0.2],
                   borderColor: [
-                    "hsl(var(--rose-gold) / 0.15)",
-                    "hsl(var(--rose-gold) / 0.45)",
-                    "hsl(var(--rose-gold) / 0.15)",
+                    "hsl(var(--rose-pink) / 0.12)",
+                    "hsl(var(--rose-pink) / 0.4)",
+                    "hsl(var(--rose-pink) / 0.12)",
                   ],
                 }
               : isListening
               ? {
                   scale: [1, 1.02, 1],
-                  opacity: [0.15, 0.3, 0.15],
+                  opacity: [0.12, 0.25, 0.12],
                 }
-              : { scale: 1, opacity: 0.1 }
+              : { scale: 1, opacity: 0.08 }
           }
           transition={{
             duration: isSpeaking ? 1 : 2.5,
@@ -65,7 +65,7 @@ export function AIAvatar({ isSpeaking, isListening, isLoading }: AIAvatarProps) 
             : { duration: 1, repeat: Infinity, ease: "easeInOut" }
         }
       >
-        <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary/30">
+        <div className="w-full h-full rounded-full overflow-hidden border-2 border-primary/30 shadow-luxury">
           <img src={suzzyAvatar} alt="Suzzy" className="w-full h-full object-cover" />
         </div>
       </motion.div>
