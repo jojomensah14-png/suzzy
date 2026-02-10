@@ -41,14 +41,14 @@ export function SessionControls({
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                 isMuted
                   ? "bg-destructive/20 border border-destructive/30 text-destructive"
-                  : "glass-panel text-foreground hover:bg-secondary/80"
+                  : "glass-panel text-foreground hover:bg-secondary/80 shadow-luxury"
               }`}
               title={isMuted ? "Unmute microphone" : "Mute microphone"}
             >
               {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
             </motion.button>
 
-            {/* End session (big red button) */}
+            {/* End session */}
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -73,7 +73,7 @@ export function SessionControls({
               className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                 !isCameraOn
                   ? "bg-destructive/20 border border-destructive/30 text-destructive"
-                  : "glass-panel text-foreground hover:bg-secondary/80"
+                  : "glass-panel text-foreground hover:bg-secondary/80 shadow-luxury"
               }`}
               title={isCameraOn ? "Turn off camera" : "Turn on camera"}
             >
@@ -83,13 +83,13 @@ export function SessionControls({
         )}
       </AnimatePresence>
 
-      {/* Start session button (only shown when not active) */}
+      {/* Start session button */}
       {!isSessionActive && (
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={onToggleSession}
-          className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary to-rose-gold text-primary-foreground font-semibold text-sm tracking-wide hover:shadow-lg hover:shadow-primary/25 transition-all"
+          className="px-8 py-3.5 rounded-full btn-luxury text-primary-foreground font-semibold text-sm tracking-wide"
         >
           Start Session ✨
         </motion.button>
