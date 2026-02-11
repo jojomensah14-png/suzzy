@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CameraView } from "@/components/CameraView";
 import { AIAvatar } from "@/components/AIAvatar";
@@ -88,114 +88,173 @@ export default function SessionPage() {
     isStreaming ? stopCamera() : startCamera();
   }, [isStreaming, startCamera, stopCamera]);
 
-  const statusText = isSpeaking ? "Speaking…" : isListening ? "Listening…" : isLoading ? "Thinking…" : "Ready";
+  const statusLabel = isSpeaking ? "Suzzy is talking…" : isListening ? "Listening to you…" : isLoading ? "Thinking…" : "";
 
   return (
-    <div className="h-screen w-screen bg-app flex flex-col overflow-hidden">
-      {/* Header — minimal */}
+    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden relative">
+      {/* Full-screen camera */}
+      <div className="absolute inset-0 z-0">
+        <CameraView videoRef={videoRef} canvasRef={canvasRef} isStreaming={isStreaming} />
+      </div>
+
+      {/* Dark gradient overlays for readability */}
+      <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-t from-background via-background/20 to-background/40" />
+      <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-background/60 via-transparent to-transparent h-28" />
+
+      {/* Header — floating over camera */}
       <motion.header
-        className="flex items-center justify-between px-4 md:px-5 py-3 z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
+        className="relative z-10 flex items-center justify-between px-4 md:px-5 py-3"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
-            className="w-8 h-8 rounded-full btn-ghost flex items-center justify-center text-muted-foreground hover:text-foreground"
+            className="w-8 h-8 rounded-full surface-glass flex items-center justify-center text-foreground/60 hover:text-foreground transition-colors"
           >
             <ArrowLeft size={15} />
           </button>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full overflow-hidden border border-primary/15">
-              <img src={suzzyIcon} alt="S" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <h1 className="font-display text-sm text-foreground leading-tight">Suzzy</h1>
-              {isSessionActive && (
-                <span className="text-[10px] text-muted-foreground leading-tight">{statusText}</span>
-              )}
-            </div>
-          </div>
+          {isSessionActive && (
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-2"
+            >
+              <div className="w-6 h-6 rounded-full overflow-hidden border border-primary/20">
+                <img src={suzzyIcon} alt="S" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-foreground/80 leading-none">Suzzy</p>
+                {statusLabel && (
+                  <motion.p
+                    key={statusLabel}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[10px] text-primary/70 leading-none mt-0.5"
+                  >
+                    {statusLabel}
+                  </motion.p>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {isSessionActive && (
-          <AIAvatar
-            isSpeaking={isSpeaking}
-            isListening={isListening && !isMuted}
-            isLoading={isLoading}
-          />
-        )}
+        <FaceStatusBar faceContext={faceContext} isVisible={isSessionActive && isStreaming} />
       </motion.header>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-2 px-3 md:px-4 pb-2 min-h-0">
-        {/* Camera */}
-        <div className="flex-1 relative min-h-0 rounded-xl overflow-hidden">
-          <CameraView videoRef={videoRef} canvasRef={canvasRef} isStreaming={isStreaming} />
-          <FaceStatusBar faceContext={faceContext} isVisible={isSessionActive && isStreaming} />
+      {/* Suzzy floating avatar — prominent, FaceTime PiP style */}
+      <AnimatePresence>
+        {isSessionActive && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="absolute top-16 right-4 z-20"
+          >
+            <AIAvatar
+              isSpeaking={isSpeaking}
+              isListening={isListening && !isMuted}
+              isLoading={isLoading}
+              size="lg"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Permission overlay */}
-          <AnimatePresence>
-            {!isSessionActive && showPermissionPrompt && (
+      {/* Pre-session welcome */}
+      <AnimatePresence>
+        {!isSessionActive && showPermissionPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 backdrop-blur-md"
+          >
+            <motion.div
+              className="text-center max-w-xs px-6"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+            >
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm rounded-xl z-10"
+                className="w-20 h-20 mx-auto mb-6 rounded-full overflow-hidden animate-pulse-soft"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
               >
-                <div className="text-center max-w-xs px-6">
-                  <div className="w-14 h-14 mx-auto mb-5 rounded-full overflow-hidden border border-primary/15 animate-pulse-soft">
-                    <img src={suzzyIcon} alt="S" className="w-full h-full object-cover" />
-                  </div>
-                  <h2 className="font-display text-xl text-foreground mb-2">Ready to glow?</h2>
-                  <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-                    Suzzy needs your camera and mic to coach you live. Nothing is recorded.
-                  </p>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={handleStartSession}
-                    className="px-7 py-3 rounded-full btn-rose font-medium text-sm"
-                  >
-                    Let's Go 💅
-                  </motion.button>
-                </div>
+                <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
               </motion.div>
-            )}
-          </AnimatePresence>
+              <h2 className="font-display text-2xl text-foreground mb-1.5">Hey gorgeous</h2>
+              <p className="font-display text-base text-primary/60 italic mb-4">Ready to glow up?</p>
+              <p className="text-[11px] text-muted-foreground mb-8 leading-relaxed">
+                Suzzy uses your camera and mic to coach you in real-time. Nothing is saved or recorded.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={handleStartSession}
+                className="px-8 py-3.5 rounded-full btn-rose font-medium text-sm tracking-wide"
+              >
+                <span className="flex items-center gap-2">
+                  Let's Go
+                  <Sparkles size={14} />
+                </span>
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Transcript */}
+      {/* Bottom area — chat + controls floating over camera */}
+      <div className="relative z-10 mt-auto flex flex-col">
+        {/* Chat messages — floating over camera like iMessage */}
+        <AnimatePresence>
+          {isSessionActive && messages.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.4 }}
+              className="px-4 md:px-5 mb-2 max-h-[35vh] overflow-hidden"
+            >
+              <ChatPanel messages={messages} isLoading={isLoading} error={coachError} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Transcript overlay */}
+        <AnimatePresence>
+          {isListening && transcript && !processingRef.current && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              className="px-4 md:px-5 mb-2"
+            >
+              <div className="surface-glass px-4 py-2 rounded-xl text-xs text-foreground/70 text-center max-w-md mx-auto">
+                🎤 {transcript}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Text input + controls */}
+        <motion.div
+          className="px-4 md:px-5 pb-5 pt-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {/* Chat input */}
           <AnimatePresence>
-            {isListening && transcript && !processingRef.current && (
-              <motion.div
+            {isSessionActive && (
+              <motion.form
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
-                className="absolute bottom-3 left-3 right-3 z-10"
-              >
-                <div className="surface-glass px-4 py-2 rounded-lg text-xs text-foreground/80 text-center">
-                  {transcript}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Chat panel */}
-        <AnimatePresence>
-          {isSessionActive && (
-            <motion.div
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full lg:w-72 surface-elevated p-3 rounded-xl overflow-hidden flex flex-col max-h-[28vh] lg:max-h-full"
-            >
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ChatPanel messages={messages} isLoading={isLoading} error={coachError} />
-              </div>
-              <form
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const text = chatInput.trim();
@@ -214,55 +273,50 @@ export default function SessionPage() {
                     if (isSessionActiveRef.current && !isMutedRef.current) startListening();
                   }
                 }}
-                className="flex gap-2 mt-2 pt-2 border-t border-border/30"
+                className="flex gap-2 mb-4 max-w-md mx-auto w-full"
               >
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Message Suzzy…"
-                  className="flex-1 bg-muted/50 border border-border/40 rounded-full px-3.5 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30 transition-colors"
+                  className="flex-1 surface-glass px-4 py-2.5 rounded-full text-xs text-foreground placeholder:text-muted-foreground/35 focus:outline-none focus:border-primary/25 transition-all border border-transparent"
                   disabled={isLoading}
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !chatInput.trim()}
-                  className="w-8 h-8 rounded-full btn-rose flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
+                  className="w-9 h-9 rounded-full btn-rose flex items-center justify-center disabled:opacity-15 disabled:cursor-not-allowed transition-opacity"
                 >
-                  <Send size={12} />
+                  <Send size={13} />
                 </button>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.form>
+            )}
+          </AnimatePresence>
+
+          {/* Session controls */}
+          <div className="flex items-center justify-center">
+            <SessionControls
+              isSessionActive={isSessionActive}
+              isListening={isListening}
+              isMuted={isMuted}
+              isCameraOn={isStreaming}
+              onToggleSession={handleToggleSession}
+              onToggleMute={toggleMute}
+              onToggleCamera={handleToggleCamera}
+            />
+          </div>
+        </motion.div>
       </div>
 
-      {/* Controls */}
-      <motion.div
-        className="flex items-center justify-center gap-3 px-4 py-4"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <SessionControls
-          isSessionActive={isSessionActive}
-          isListening={isListening}
-          isMuted={isMuted}
-          isCameraOn={isStreaming}
-          onToggleSession={handleToggleSession}
-          onToggleMute={toggleMute}
-          onToggleCamera={handleToggleCamera}
-        />
-      </motion.div>
-
-      {/* Error */}
+      {/* Error toast */}
       <AnimatePresence>
         {(cameraError || voiceError) && (
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 surface-elevated px-5 py-2.5 rounded-lg text-xs text-foreground max-w-sm text-center z-50"
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 surface-glass px-5 py-2 rounded-lg text-[11px] text-foreground/70 max-w-xs text-center z-50"
           >
             {cameraError || voiceError}
           </motion.div>
