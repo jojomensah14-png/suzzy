@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Outfit", "sans-serif"],
-        display: ["Cormorant Garamond", "serif"],
+        sans: ["Inter", "sans-serif"],
+        display: ["Playfair Display", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,13 +51,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        "rose-gold": "hsl(var(--rose-pink))",
-        "rose-gold-light": "hsl(var(--rose-pink-light))",
+        rose: "hsl(var(--rose))",
+        "rose-soft": "hsl(var(--rose-soft))",
+        gold: "hsl(var(--gold))",
+        "gold-soft": "hsl(var(--gold-soft))",
         blush: "hsl(var(--blush))",
         champagne: "hsl(var(--champagne))",
-        "warm-gold": "hsl(var(--warm-gold))",
-        nude: "hsl(var(--nude))",
-        glass: "hsl(var(--glass))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

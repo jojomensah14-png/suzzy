@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Camera, CameraOff, PhoneOff } from "lucide-react";
+import { Mic, MicOff, Camera, CameraOff, PhoneOff, Sparkles } from "lucide-react";
 
 interface SessionControlsProps {
   isSessionActive: boolean;
@@ -23,75 +23,75 @@ export function SessionControls({
   return (
     <motion.div
       className="flex items-center gap-3"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
+      transition={{ delay: 0.2 }}
     >
       <AnimatePresence>
         {isSessionActive && (
           <>
-            {/* Mic toggle */}
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
               onClick={onToggleMute}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
                 isMuted
-                  ? "bg-destructive/20 border border-destructive/30 text-destructive"
-                  : "glass-panel text-foreground hover:bg-secondary/80 shadow-luxury"
+                  ? "bg-destructive/15 border border-destructive/25 text-destructive"
+                  : "btn-ghost"
               }`}
-              title={isMuted ? "Unmute microphone" : "Mute microphone"}
+              title={isMuted ? "Unmute" : "Mute"}
             >
-              {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+              {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
             </motion.button>
 
-            {/* End session */}
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={onToggleSession}
-              className="w-14 h-14 rounded-full bg-destructive/90 text-destructive-foreground hover:bg-destructive flex items-center justify-center transition-all shadow-lg shadow-destructive/20"
+              className="w-13 h-13 rounded-full bg-destructive/80 text-destructive-foreground hover:bg-destructive flex items-center justify-center transition-all shadow-soft"
+              style={{ width: 52, height: 52 }}
               title="End session"
             >
-              <PhoneOff size={20} />
+              <PhoneOff size={18} />
             </motion.button>
 
-            {/* Camera toggle */}
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
               onClick={onToggleCamera}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
                 !isCameraOn
-                  ? "bg-destructive/20 border border-destructive/30 text-destructive"
-                  : "glass-panel text-foreground hover:bg-secondary/80 shadow-luxury"
+                  ? "bg-destructive/15 border border-destructive/25 text-destructive"
+                  : "btn-ghost"
               }`}
-              title={isCameraOn ? "Turn off camera" : "Turn on camera"}
+              title={isCameraOn ? "Camera off" : "Camera on"}
             >
-              {isCameraOn ? <Camera size={18} /> : <CameraOff size={18} />}
+              {isCameraOn ? <Camera size={16} /> : <CameraOff size={16} />}
             </motion.button>
           </>
         )}
       </AnimatePresence>
 
-      {/* Start session button */}
       {!isSessionActive && (
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           onClick={onToggleSession}
-          className="px-8 py-3.5 rounded-full btn-luxury text-primary-foreground font-semibold text-sm tracking-wide"
+          className="px-8 py-3.5 rounded-full btn-rose font-medium text-sm tracking-wide"
         >
-          Start Session ✨
+          <span className="flex items-center gap-2">
+            Start Session
+            <Sparkles size={14} />
+          </span>
         </motion.button>
       )}
 
@@ -102,15 +102,15 @@ export function SessionControls({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="flex items-center gap-1.5 ml-1"
+            className="flex items-center gap-1 ml-1"
           >
-            {[0, 1, 2, 3].map((i) => (
+            {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="w-1 bg-primary rounded-full"
-                animate={{ height: [4, 16, 4] }}
+                className="w-0.5 bg-primary/60 rounded-full"
+                animate={{ height: [3, 12, 3] }}
                 transition={{
-                  duration: 0.6,
+                  duration: 0.5,
                   repeat: Infinity,
                   delay: i * 0.1,
                   ease: "easeInOut",
