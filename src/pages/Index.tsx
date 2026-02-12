@@ -1,26 +1,32 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { MainMenu } from "@/components/MainMenu";
 import suzzyAvatar from "@/assets/suzzy-avatar.png";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();
 
   return (
     <div className="min-h-screen bg-app flex flex-col items-center justify-center px-6 py-16 overflow-hidden relative">
       {/* Ambient glow */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full opacity-100 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse, hsl(350 40% 55% / 0.06) 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(ellipse, hsl(350 40% 55% / 0.06) 0%, transparent 70%)" }}
       />
       <div
         className="absolute bottom-0 right-1/4 w-[400px] h-[300px] rounded-full opacity-100 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse, hsl(38 50% 58% / 0.04) 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(ellipse, hsl(38 50% 58% / 0.04) 0%, transparent 70%)" }}
       />
+
+      {/* Menu */}
+      {user && (
+        <div className="absolute top-5 right-5 z-20">
+          <MainMenu />
+        </div>
+      )}
 
       {/* Content */}
       <motion.div
@@ -52,13 +58,16 @@ const Index = () => {
           <span className="text-gradient-rose">Suzzy</span>
         </motion.h1>
 
+        {/* Personalized greeting */}
         <motion.p
           className="font-display text-lg text-muted-foreground italic mb-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.35 }}
         >
-          Your Beauty Bestie
+          {user && profile?.name
+            ? `Welcome back, ${profile.name} ✨`
+            : "Your Beauty Bestie"}
         </motion.p>
 
         <motion.p
@@ -72,20 +81,33 @@ const Index = () => {
         </motion.p>
 
         {/* CTA */}
-        <motion.button
-          onClick={() => navigate("/session")}
-          className="group px-10 py-4 rounded-full btn-rose font-medium text-sm tracking-wide"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+        <motion.div
+          className="flex flex-col items-center gap-3"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <span className="flex items-center gap-2">
-            Start Session
-            <Sparkles size={14} />
-          </span>
-        </motion.button>
+          <motion.button
+            onClick={() => navigate(user ? "/session" : "/auth")}
+            className="group px-10 py-4 rounded-full btn-rose font-medium text-sm tracking-wide"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <span className="flex items-center gap-2">
+              {user ? "Start Session" : "Get Started"}
+              <Sparkles size={14} />
+            </span>
+          </motion.button>
+
+          {!user && !loading && (
+            <button
+              onClick={() => navigate("/auth")}
+              className="text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+            >
+              Already have an account? Sign in
+            </button>
+          )}
+        </motion.div>
       </motion.div>
 
       {/* Footer */}

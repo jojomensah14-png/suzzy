@@ -7,13 +7,16 @@ import { AIAvatar } from "@/components/AIAvatar";
 import { SessionControls } from "@/components/SessionControls";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FaceStatusBar } from "@/components/FaceStatusBar";
+import { MainMenu } from "@/components/MainMenu";
 import { useCamera } from "@/hooks/useCamera";
 import { useVoice } from "@/hooks/useVoice";
 import { useMakeupCoach } from "@/hooks/useMakeupCoach";
+import { useAuth } from "@/hooks/useAuth";
 import suzzyIcon from "@/assets/suzzy-icon.png";
 
 export default function SessionPage() {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -59,10 +62,10 @@ export default function SessionPage() {
     await startCamera();
     setIsSessionActive(true);
     processingRef.current = true;
-    const greeting = await sendMessage(
-      "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.",
-      faceContext
-    );
+    const greetingPrompt = profile?.name
+      ? `Hey Suzzy! ${profile.name} just started a session. Welcome them back warmly by name and ask what look they're going for today. ${profile.skin_type ? `Their skin type is ${profile.skin_type}.` : ""} ${profile.skin_tone ? `Their skin tone is ${profile.skin_tone}.` : ""}`
+      : "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.";
+    const greeting = await sendMessage(greetingPrompt, faceContext);
     if (greeting) {
       speak(greeting, () => {
         processingRef.current = false;
@@ -141,7 +144,10 @@ export default function SessionPage() {
           )}
         </div>
 
-        <FaceStatusBar faceContext={faceContext} isVisible={isSessionActive && isStreaming} />
+        <div className="flex items-center gap-2">
+          <FaceStatusBar faceContext={faceContext} isVisible={isSessionActive && isStreaming} />
+          <MainMenu />
+        </div>
       </motion.header>
 
       {/* Suzzy floating avatar — prominent, FaceTime PiP style */}
