@@ -53,6 +53,8 @@ function validateMessages(messages: unknown): { valid: boolean; data?: Array<{ r
     if (msg.role !== "user" && msg.role !== "assistant") return { valid: false };
     if (typeof msg.content !== "string") return { valid: false };
     if (msg.content.length < 1 || msg.content.length > 2000) return { valid: false };
+    // Reject control characters (except normal whitespace)
+    if (/[\x00-\x08\x0B-\x0C\x0E-\x1F]/.test(msg.content)) return { valid: false };
   }
   
   return { valid: true, data: messages as Array<{ role: string; content: string }> };
