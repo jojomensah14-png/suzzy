@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { FaceContext } from "./useCamera";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -30,11 +31,15 @@ export function useMakeupCoach(): UseMakeupCoachReturn {
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/makeup-coach`;
 
+      // Get the user's session token for authenticated requests
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           messages: updatedMessages.slice(-10), // Keep last 10 messages for context
