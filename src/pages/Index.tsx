@@ -2,12 +2,14 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { MainMenu } from "@/components/MainMenu";
 import suzzyAvatar from "@/assets/suzzy-avatar.png";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-app flex flex-col items-center justify-center px-6 py-16 overflow-hidden relative">
@@ -66,8 +68,8 @@ const Index = () => {
           transition={{ delay: 0.35 }}
         >
           {user && profile?.name
-            ? `Welcome back, ${profile.name} ✨`
-            : "Your Beauty Bestie"}
+            ? t("welcome_back", { name: profile.name })
+            : t("your_beauty_bestie")}
         </motion.p>
 
         <motion.p
@@ -94,7 +96,7 @@ const Index = () => {
             whileTap={{ scale: 0.97 }}
           >
             <span className="flex items-center gap-2">
-              {user ? "Start Session" : "Get Started"}
+              {user ? t("start_session") : t("get_started")}
               <Sparkles size={14} />
             </span>
           </motion.button>
@@ -117,7 +119,7 @@ const Index = () => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
       >
-        Camera & microphone required · Best in Chrome
+        {t("camera_mic_required")}
       </motion.p>
     </div>
   );

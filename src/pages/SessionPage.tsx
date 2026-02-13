@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Mic, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { CameraView } from "@/components/CameraView";
 import { AIAvatar } from "@/components/AIAvatar";
@@ -12,23 +12,39 @@ import { useCamera } from "@/hooks/useCamera";
 import { useVoice } from "@/hooks/useVoice";
 import { useMakeupCoach } from "@/hooks/useMakeupCoach";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 import suzzyIcon from "@/assets/suzzy-icon.png";
 
 export default function SessionPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { language, t } = useLanguage();
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [showPermissionPrompt, setShowPermissionPrompt] = useState(true);
   const [chatInput, setChatInput] = useState("");
+  const [showVoiceGate, setShowVoiceGate] = useState(false);
   const isSessionActiveRef = useRef(false);
   const isMutedRef = useRef(false);
 
   const { videoRef, canvasRef, isStreaming, faceContext, startCamera, stopCamera, error: cameraError } = useCamera();
-  const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, isMuted, toggleMute, error: voiceError } = useVoice();
+  const {
+    isListening, transcript, isSpeaking, startListening, stopListening,
+    speak, stopSpeaking, isMuted, toggleMute, error: voiceError,
+    isPremiumVoice, setUsePremiumVoice,
+  } = useVoice(language);
   const { messages, isLoading, sendMessage, error: coachError } = useMakeupCoach();
   const lastTranscriptRef = useRef("");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const processingRef = useRef(false);
+
+  const isPremiumUser = profile?.subscription_tier === "premium" || profile?.subscription_tier === "vip";
+
+  // Auto-enable premium voice for premium users
+  useEffect(() => {
+    if (isPremiumUser) {
+      setUsePremiumVoice(true);
+    }
+  }, [isPremiumUser, setUsePremiumVoice]);
 
   useEffect(() => { isSessionActiveRef.current = isSessionActive; }, [isSessionActive]);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
@@ -63,8 +79,8 @@ export default function SessionPage() {
     setIsSessionActive(true);
     processingRef.current = true;
     const greetingPrompt = profile?.name
-      ? `Hey Suzzy! ${profile.name} just started a session. Welcome them back warmly by name and ask what look they're going for today. ${profile.skin_type ? `Their skin type is ${profile.skin_type}.` : ""} ${profile.skin_tone ? `Their skin tone is ${profile.skin_tone}.` : ""}`
-      : "Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today.";
+      ? `Hey Suzzy! ${profile.name} just started a session. Welcome them back warmly by name and ask what look they're going for today. ${profile.skin_type ? `Their skin type is ${profile.skin_type}.` : ""} ${profile.skin_tone ? `Their skin tone is ${profile.skin_tone}.` : ""} Respond in ${language === "fr" ? "French" : language === "es" ? "Spanish" : language === "ar" ? "Arabic" : "English"}.`
+      : `Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today. Respond in ${language === "fr" ? "French" : language === "es" ? "Spanish" : language === "ar" ? "Arabic" : "English"}.`;
     const greeting = await sendMessage(greetingPrompt, faceContext);
     if (greeting) {
       speak(greeting, () => {
@@ -75,7 +91,7 @@ export default function SessionPage() {
       processingRef.current = false;
       if (!isMutedRef.current) startListening();
     }
-  }, [startCamera, speak, sendMessage, faceContext, startListening]);
+  }, [startCamera, speak, sendMessage, faceContext, startListening, profile, language]);
 
   const handleEndSession = useCallback(() => {
     stopListening(); stopSpeaking(); stopCamera();
@@ -91,7 +107,15 @@ export default function SessionPage() {
     isStreaming ? stopCamera() : startCamera();
   }, [isStreaming, startCamera, stopCamera]);
 
-  const statusLabel = isSpeaking ? "Suzzy is talking…" : isListening ? "Listening to you…" : isLoading ? "Thinking…" : "";
+  const handleVoiceChatToggle = useCallback(() => {
+    if (!isPremiumUser) {
+      setShowVoiceGate(true);
+      return;
+    }
+    setUsePremiumVoice(!isPremiumVoice);
+  }, [isPremiumUser, isPremiumVoice, setUsePremiumVoice]);
+
+  const statusLabel = isSpeaking ? t("suzzy_talking") : isListening ? t("listening") : isLoading ? t("thinking") : "";
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col overflow-hidden relative">
@@ -100,11 +124,10 @@ export default function SessionPage() {
         <CameraView videoRef={videoRef} canvasRef={canvasRef} isStreaming={isStreaming} />
       </div>
 
-      {/* Dark gradient overlays for readability */}
       <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-t from-background via-background/20 to-background/40" />
       <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b from-background/60 via-transparent to-transparent h-28" />
 
-      {/* Header — floating over camera */}
+      {/* Header */}
       <motion.header
         className="relative z-10 flex items-center justify-between px-4 md:px-5 py-3"
         initial={{ opacity: 0, y: -10 }}
@@ -145,12 +168,30 @@ export default function SessionPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Premium voice badge */}
+          {isSessionActive && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleVoiceChatToggle}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] transition-all ${
+                isPremiumVoice && isPremiumUser
+                  ? "bg-primary/20 border border-primary/30 text-primary"
+                  : "surface-glass text-foreground/40"
+              }`}
+              title={isPremiumUser ? t("voice_chat") : t("upgrade_to_unlock")}
+            >
+              {isPremiumUser ? <Mic size={10} /> : <Lock size={10} />}
+              {isPremiumVoice && isPremiumUser ? "HD Voice" : t("voice_chat")}
+            </motion.button>
+          )}
           <FaceStatusBar faceContext={faceContext} isVisible={isSessionActive && isStreaming} />
           <MainMenu />
         </div>
       </motion.header>
 
-      {/* Suzzy floating avatar — prominent, FaceTime PiP style */}
+      {/* Suzzy floating avatar */}
       <AnimatePresence>
         {isSessionActive && (
           <motion.div
@@ -193,10 +234,10 @@ export default function SessionPage() {
               >
                 <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
               </motion.div>
-              <h2 className="font-display text-2xl text-foreground mb-1.5">Hey gorgeous</h2>
-              <p className="font-display text-base text-primary/60 italic mb-4">Ready to glow up?</p>
+              <h2 className="font-display text-2xl text-foreground mb-1.5">{t("hey_gorgeous")}</h2>
+              <p className="font-display text-base text-primary/60 italic mb-4">{t("ready_to_glow")}</p>
               <p className="text-[11px] text-muted-foreground mb-8 leading-relaxed">
-                Suzzy uses your camera and mic to coach you in real-time. Nothing is saved or recorded.
+                {t("camera_mic_required")}
               </p>
               <motion.button
                 whileHover={{ scale: 1.04 }}
@@ -205,7 +246,7 @@ export default function SessionPage() {
                 className="px-8 py-3.5 rounded-full btn-rose font-medium text-sm tracking-wide"
               >
                 <span className="flex items-center gap-2">
-                  Let's Go
+                  {t("lets_go")}
                   <Sparkles size={14} />
                 </span>
               </motion.button>
@@ -214,9 +255,57 @@ export default function SessionPage() {
         )}
       </AnimatePresence>
 
-      {/* Bottom area — chat + controls floating over camera */}
+      {/* Premium voice gate modal */}
+      <AnimatePresence>
+        {showVoiceGate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md"
+            onClick={() => setShowVoiceGate(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="surface-glass border border-border/15 rounded-2xl p-6 max-w-xs text-center"
+            >
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mic size={24} className="text-primary" />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-1">{t("premium_feature")}</h3>
+              <p className="text-xs text-muted-foreground mb-5">{t("upgrade_to_unlock")}</p>
+              <div className="space-y-2">
+                <p className="text-[11px] text-muted-foreground/50 mb-3">
+                  Unlock Suzzy's warm, natural AI voice with HD quality and multi-language support.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setShowVoiceGate(false);
+                    navigate("/pricing");
+                  }}
+                  className="w-full py-2.5 rounded-xl btn-rose font-medium text-sm"
+                >
+                  View Plans ✨
+                </motion.button>
+                <button
+                  onClick={() => setShowVoiceGate(false)}
+                  className="w-full py-2 text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom area */}
       <div className="relative z-10 mt-auto flex flex-col">
-        {/* Chat messages — floating over camera like iMessage */}
         <AnimatePresence>
           {isSessionActive && messages.length > 0 && (
             <motion.div
@@ -254,7 +343,6 @@ export default function SessionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Chat input */}
           <AnimatePresence>
             {isSessionActive && (
               <motion.form
@@ -285,7 +373,7 @@ export default function SessionPage() {
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Message Suzzy…"
+                  placeholder={t("message_suzzy")}
                   className="flex-1 surface-glass px-4 py-2.5 rounded-full text-xs text-foreground placeholder:text-muted-foreground/35 focus:outline-none focus:border-primary/25 transition-all border border-transparent"
                   disabled={isLoading}
                 />
@@ -300,7 +388,6 @@ export default function SessionPage() {
             )}
           </AnimatePresence>
 
-          {/* Session controls */}
           <div className="flex items-center justify-center">
             <SessionControls
               isSessionActive={isSessionActive}
