@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,20 +34,89 @@ CAMERA CONTEXT (when provided):
 
 INTRO: "Heyyy gorgeous! I'm Suzzy, your beauty bestie 💋 What look are we creating today?"`;
 
+// Simple validation helpers
+function validateMessages(messages: unknown): { valid: boolean; data?: Array<{ role: string; content: string }> } {
+  if (!Array.isArray(messages)) return { valid: false };
+  if (messages.length < 1 || messages.length > 20) return { valid: false };
+  
+  for (const msg of messages) {
+    if (typeof msg !== "object" || msg === null) return { valid: false };
+    if (msg.role !== "user" && msg.role !== "assistant") return { valid: false };
+    if (typeof msg.content !== "string") return { valid: false };
+    if (msg.content.length < 1 || msg.content.length > 2000) return { valid: false };
+  }
+  
+  return { valid: true, data: messages as Array<{ role: string; content: string }> };
+}
+
+function validateFaceContext(ctx: unknown): { valid: boolean; data?: Record<string, unknown> } {
+  if (ctx === undefined || ctx === null) return { valid: true, data: undefined };
+  if (typeof ctx !== "object") return { valid: false };
+  // Allow face context but limit its serialized size
+  const serialized = JSON.stringify(ctx);
+  if (serialized.length > 1000) return { valid: false };
+  return { valid: true, data: ctx as Record<string, unknown> };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, faceContext } = await req.json();
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // --- Input Validation ---
+    const body = await req.json();
+
+    const messagesResult = validateMessages(body.messages);
+    if (!messagesResult.valid) {
+      return new Response(
+        JSON.stringify({ error: "Invalid messages: must be 1-20 messages, each with role (user/assistant) and content (1-2000 chars)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const faceContextResult = validateFaceContext(body.faceContext);
+    if (!faceContextResult.valid) {
+      return new Response(
+        JSON.stringify({ error: "Invalid face context data" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const messages = messagesResult.data!;
+    const faceContext = faceContextResult.data;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     // Build context-aware system message
     let systemContent = SYSTEM_PROMPT;
     if (faceContext) {
-      systemContent += `\n\nCurrent face context from camera:\n${JSON.stringify(faceContext, null, 2)}`;
+      systemContent += `\n\nCurrent face context from camera:\n${JSON.stringify(faceContext)}`;
     }
 
     const response = await fetch(
@@ -95,7 +165,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("makeup-coach error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "An unexpected error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
