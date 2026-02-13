@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useElevenLabsVoice } from "./useElevenLabsVoice";
 
 interface UseVoiceReturn {
   isListening: boolean;
@@ -11,18 +12,33 @@ interface UseVoiceReturn {
   isMuted: boolean;
   toggleMute: () => void;
   error: string | null;
+  isPremiumVoice: boolean;
+  setUsePremiumVoice: (use: boolean) => void;
 }
 
-export function useVoice(): UseVoiceReturn {
+export function useVoice(language: string = "en"): UseVoiceReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPremiumVoice, setUsePremiumVoice] = useState(false);
   const recognitionRef = useRef<any>(null);
   const shouldRestartRef = useRef(false);
 
-  // Pre-load voices
+  const elevenLabs = useElevenLabsVoice();
+
+  const isSpeaking = isPremiumVoice ? elevenLabs.isSpeaking : isSpeakingLocal;
+
+  // Speech language mapping
+  const speechLangMap: Record<string, string> = {
+    en: "en-US",
+    fr: "fr-FR",
+    es: "es-ES",
+    ar: "ar-SA",
+  };
+
+  // Pre-load browser voices
   useEffect(() => {
     window.speechSynthesis.getVoices();
     const handleVoices = () => window.speechSynthesis.getVoices();
@@ -40,7 +56,6 @@ export function useVoice(): UseVoiceReturn {
   const startListening = useCallback(() => {
     if (isMuted) return;
 
-    // Stop any existing recognition first
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch { /* ignore */ }
       recognitionRef.current = null;
@@ -56,7 +71,7 @@ export function useVoice(): UseVoiceReturn {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = "en-US";
+      recognition.lang = speechLangMap[language] || "en-US";
 
       recognition.onresult = (event: any) => {
         let finalTranscript = "";
@@ -107,7 +122,7 @@ export function useVoice(): UseVoiceReturn {
       setError("Could not start speech recognition.");
       console.error("Speech recognition start error:", err);
     }
-  }, [isMuted]);
+  }, [isMuted, language]);
 
   const stopListening = useCallback(() => {
     shouldRestartRef.current = false;
@@ -118,51 +133,63 @@ export function useVoice(): UseVoiceReturn {
     setIsListening(false);
   }, []);
 
-  const speak = useCallback((text: string, onDone?: () => void) => {
-    if (isMuted) {
-      onDone?.();
-      return;
-    }
+  const speak = useCallback(
+    (text: string, onDone?: () => void) => {
+      if (isMuted) {
+        onDone?.();
+        return;
+      }
 
-    // Stop listening while speaking to prevent feedback
-    stopListening();
-    window.speechSynthesis.cancel();
+      stopListening();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.1;
-    utterance.volume = 0.9;
+      if (isPremiumVoice) {
+        // Use ElevenLabs for premium voice
+        elevenLabs.speak(text, language, onDone);
+      } else {
+        // Fallback to browser TTS
+        window.speechSynthesis.cancel();
 
-    // Pick a nice female voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(
-      (v) =>
-        v.name.includes("Samantha") ||
-        v.name.includes("Karen") ||
-        v.name.includes("Moira") ||
-        v.name.includes("Google UK English Female") ||
-        v.name.includes("Microsoft Zira") ||
-        (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
-    );
-    if (preferred) utterance.voice = preferred;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1;
+        utterance.volume = 0.9;
+        utterance.lang = speechLangMap[language] || "en-US";
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      onDone?.();
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      onDone?.();
-    };
+        const voices = window.speechSynthesis.getVoices();
+        const langVoices = voices.filter((v) => v.lang.startsWith(language));
+        const preferred =
+          langVoices.find(
+            (v) =>
+              v.name.includes("Samantha") ||
+              v.name.includes("Google") ||
+              v.name.toLowerCase().includes("female")
+          ) || langVoices[0];
+        if (preferred) utterance.voice = preferred;
 
-    window.speechSynthesis.speak(utterance);
-  }, [isMuted, stopListening]);
+        utterance.onstart = () => setIsSpeakingLocal(true);
+        utterance.onend = () => {
+          setIsSpeakingLocal(false);
+          onDone?.();
+        };
+        utterance.onerror = () => {
+          setIsSpeakingLocal(false);
+          onDone?.();
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+    },
+    [isMuted, stopListening, isPremiumVoice, elevenLabs, language]
+  );
 
   const stopSpeaking = useCallback(() => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  }, []);
+    if (isPremiumVoice) {
+      elevenLabs.stopSpeaking();
+    } else {
+      window.speechSynthesis.cancel();
+      setIsSpeakingLocal(false);
+    }
+  }, [isPremiumVoice, elevenLabs]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
@@ -184,6 +211,8 @@ export function useVoice(): UseVoiceReturn {
     stopSpeaking,
     isMuted,
     toggleMute,
-    error,
+    error: error || elevenLabs.error,
+    isPremiumVoice,
+    setUsePremiumVoice,
   };
 }
