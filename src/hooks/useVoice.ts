@@ -1,3 +1,14 @@
+function cleanForVoice(text: string) {
+  return text
+    .replace(/[\p{Emoji}]/gu, "")         // remove emojis
+    .replace(/[*_~`>#]/g, "")             // remove markdown
+    .replace(/\[(.*?)\]\(.*?\)/g, "$1")   // remove links
+    .replace(/\n+/g, " ")                 // remove line breaks
+    .replace(/\s{2,}/g, " ")              // fix spacing
+    .trim()
+    .slice(0, 240);                       // keep speech short & sexy
+}
+
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useElevenLabsVoice } from "./useElevenLabsVoice";
 
@@ -7,7 +18,16 @@ interface UseVoiceReturn {
   isSpeaking: boolean;
   startListening: () => void;
   stopListening: () => void;
-  speak: (text: string, onDone?: () => void) => void;
+  let cleanText = cleanForVoice(text);
+
+// Limit how much Suzzy speaks
+if (cleanText.split(" ").length > 35) {
+  cleanText = cleanText.split(" ").slice(0, 35).join(" ");
+}
+  const speak = useCallback(
+  (text: string, onDone?: () => void) => {
+
+    const cleanText = cleanForVoice(text);
   stopSpeaking: () => void;
   isMuted: boolean;
   toggleMute: () => void;
@@ -150,10 +170,10 @@ export function useVoice(language: string = "en"): UseVoiceReturn {
         // Fallback to browser TTS
         window.speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.1;
-        utterance.volume = 0.9;
+        const utterance = new SpeechSynthesisUtterance(cleantext);
+       utterance.rate = 0.92;      // slower, sexy
+utterance.pitch = 1.18;    // feminine
+utterance.volume = 1.0;    // confident
         utterance.lang = speechLangMap[language] || "en-US";
 
         const voices = window.speechSynthesis.getVoices();
