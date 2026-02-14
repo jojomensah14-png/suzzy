@@ -16,11 +16,13 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-// Voice IDs mapped to languages - warm, friendly female voices
+// Voice IDs mapped to languages - warm, soulful female voices
+// Sarah (EXAVITQu4vr4xnSDxMaL) - warm, friendly, expressive multilingual voice
 const VOICE_MAP: Record<string, string> = {
   en: "EXAVITQu4vr4xnSDxMaL", // Sarah - warm English
   fr: "EXAVITQu4vr4xnSDxMaL", // Sarah (multilingual)
   es: "EXAVITQu4vr4xnSDxMaL", // Sarah (multilingual)
+  pt: "EXAVITQu4vr4xnSDxMaL", // Sarah (multilingual)
   ar: "EXAVITQu4vr4xnSDxMaL", // Sarah (multilingual)
 };
 
@@ -75,6 +77,9 @@ Deno.serve(async (req) => {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
 
+    // Soulful, warm voice settings for Suzzy
+    // Lower stability = more expressive/emotional
+    // Higher style = more stylized delivery
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
       {
@@ -87,11 +92,11 @@ Deno.serve(async (req) => {
           text,
           model_id: "eleven_multilingual_v2",
           voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.75,
-            style: 0.45,
+            stability: 0.35,
+            similarity_boost: 0.8,
+            style: 0.55,
             use_speaker_boost: true,
-            speed: 1.0,
+            speed: 0.95,
           },
         }),
       }

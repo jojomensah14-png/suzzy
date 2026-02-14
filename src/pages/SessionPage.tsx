@@ -13,7 +13,15 @@ import { useVoice } from "@/hooks/useVoice";
 import { useMakeupCoach } from "@/hooks/useMakeupCoach";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
-import suzzyIcon from "@/assets/suzzy-icon.png";
+import suzzyAvatar from "@/assets/suzzy-avatar.png";
+
+const LANG_NAMES: Record<string, string> = {
+  en: "English",
+  fr: "French",
+  es: "Spanish",
+  pt: "Portuguese",
+  ar: "Arabic",
+};
 
 export default function SessionPage() {
   const navigate = useNavigate();
@@ -78,9 +86,11 @@ export default function SessionPage() {
     await startCamera();
     setIsSessionActive(true);
     processingRef.current = true;
+
+    const langName = LANG_NAMES[language] || "English";
     const greetingPrompt = profile?.name
-      ? `Hey Suzzy! ${profile.name} just started a session. Welcome them back warmly by name and ask what look they're going for today. ${profile.skin_type ? `Their skin type is ${profile.skin_type}.` : ""} ${profile.skin_tone ? `Their skin tone is ${profile.skin_tone}.` : ""} Respond in ${language === "fr" ? "French" : language === "es" ? "Spanish" : language === "ar" ? "Arabic" : "English"}.`
-      : `Hey Suzzy! I just started my session. Introduce yourself in your fun personality and ask what look I'm going for today. Respond in ${language === "fr" ? "French" : language === "es" ? "Spanish" : language === "ar" ? "Arabic" : "English"}.`;
+      ? `Hey Suzzy! ${profile.name} just started a session. Welcome them back warmly by name — say something like "Welcome back, beautiful…" and ask what look they're going for today. Be warm, soulful, supportive. ${profile.skin_type ? `Their skin type is ${profile.skin_type}.` : ""} ${profile.skin_tone ? `Their skin tone is ${profile.skin_tone}.` : ""} Respond in ${langName}.`
+      : `Hey Suzzy! A new user just started their first session. Introduce yourself warmly — you're their glam best friend. Be confident, feminine, supportive. Ask what look they're going for today. Respond in ${langName}.`;
     const greeting = await sendMessage(greetingPrompt, faceContext);
     if (greeting) {
       speak(greeting, () => {
@@ -145,10 +155,10 @@ export default function SessionPage() {
             <motion.div
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2.5"
             >
-              <div className="w-6 h-6 rounded-full overflow-hidden border border-primary/20">
-                <img src={suzzyIcon} alt="S" className="w-full h-full object-cover" />
+              <div className="w-7 h-7 rounded-full overflow-hidden border border-primary/25 shadow-sm">
+                <img src={suzzyAvatar} alt="Suzzy" className="w-full h-full object-cover" />
               </div>
               <div>
                 <p className="text-xs font-medium text-foreground/80 leading-none">Suzzy</p>
@@ -191,7 +201,7 @@ export default function SessionPage() {
         </div>
       </motion.header>
 
-      {/* Suzzy floating avatar */}
+      {/* Suzzy floating avatar — cinematic portrait with life-like animations */}
       <AnimatePresence>
         {isSessionActive && (
           <motion.div
@@ -211,7 +221,7 @@ export default function SessionPage() {
         )}
       </AnimatePresence>
 
-      {/* Pre-session welcome */}
+      {/* Pre-session welcome — Suzzy's cinematic intro */}
       <AnimatePresence>
         {!isSessionActive && showPermissionPrompt && (
           <motion.div
@@ -226,14 +236,21 @@ export default function SessionPage() {
               animate={{ scale: 1, y: 0 }}
               transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
             >
+              {/* Large cinematic avatar */}
               <motion.div
-                className="w-20 h-20 mx-auto mb-6 rounded-full overflow-hidden animate-pulse-soft"
+                className="mx-auto mb-8"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring" }}
               >
-                <img src={suzzyIcon} alt="Suzzy" className="w-full h-full object-cover" />
+                <AIAvatar
+                  isSpeaking={false}
+                  isListening={false}
+                  isLoading={false}
+                  size="xl"
+                />
               </motion.div>
+
               <h2 className="font-display text-2xl text-foreground mb-1.5">{t("hey_gorgeous")}</h2>
               <p className="font-display text-base text-primary/60 italic mb-4">{t("ready_to_glow")}</p>
               <p className="text-[11px] text-muted-foreground mb-8 leading-relaxed">
@@ -279,7 +296,7 @@ export default function SessionPage() {
               <p className="text-xs text-muted-foreground mb-5">{t("upgrade_to_unlock")}</p>
               <div className="space-y-2">
                 <p className="text-[11px] text-muted-foreground/50 mb-3">
-                  Unlock Suzzy's warm, natural AI voice with HD quality and multi-language support.
+                  Unlock Suzzy's warm, soulful AI voice with HD quality and multi-language support.
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
