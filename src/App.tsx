@@ -12,6 +12,7 @@ import PricingPage from "./pages/PricingPage";
 import BeautyHistoryPage from "./pages/BeautyHistoryPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -25,11 +26,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/session" element={<SessionPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/session" element={<ProtectedRoute><SessionPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/history" element={<BeautyHistoryPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/history" element={<ProtectedRoute><BeautyHistoryPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
