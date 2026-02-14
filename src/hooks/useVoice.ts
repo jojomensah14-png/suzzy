@@ -42,7 +42,7 @@ export function useVoice(language: string = "en"): UseVoiceReturn {
   const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPremiumVoice, setUsePremiumVoice] = useState(false);
+  const [isPremiumVoice, setUsePremiumVoice] = useState(true);
   const recognitionRef = useRef<any>(null);
   const shouldRestartRef = useRef(false);
 
