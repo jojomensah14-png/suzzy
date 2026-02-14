@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
-export type Language = "en" | "fr" | "es" | "ar";
+export type Language = "en" | "fr" | "es" | "pt" | "ar";
 
 interface LanguageInfo {
   code: Language;
@@ -14,6 +14,7 @@ export const LANGUAGES: LanguageInfo[] = [
   { code: "en", name: "English", nativeName: "English", flag: "🇺🇸", speechLang: "en-US" },
   { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷", speechLang: "fr-FR" },
   { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸", speechLang: "es-ES" },
+  { code: "pt", name: "Portuguese", nativeName: "Português", flag: "🇧🇷", speechLang: "pt-BR" },
   { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦", speechLang: "ar-SA" },
 ];
 
@@ -141,6 +142,37 @@ const translations: Record<Language, Record<TranslationKey, string>> = {
     upgrade_to_unlock: "Actualiza a Premium para desbloquear el chat de voz",
     save_changes: "Guardar cambios",
     saving: "Guardando…",
+  },
+  pt: {
+    welcome_back: "Bem-vinda de volta, {name} ✨",
+    your_beauty_bestie: "Sua Melhor Amiga de Beleza",
+    start_session: "Iniciar sessão",
+    get_started: "Começar",
+    message_suzzy: "Escreva para Suzzy…",
+    hey_gorgeous: "Olá linda",
+    ready_to_glow: "Pronta para brilhar?",
+    camera_mic_required: "Câmera e microfone necessários · Melhor no Chrome",
+    lets_go: "Vamos lá",
+    end_session: "Encerrar sessão",
+    mute: "Silenciar",
+    unmute: "Ativar micro",
+    camera_on: "Câmera desligada",
+    camera_off: "Câmera ligada",
+    listening: "Ouvindo você…",
+    suzzy_talking: "Suzzy está falando…",
+    thinking: "Pensando…",
+    profile: "Perfil",
+    settings: "Configurações",
+    subscription: "Assinatura",
+    beauty_history: "Histórico de beleza",
+    help: "Ajuda",
+    sign_out: "Sair",
+    language: "Idioma",
+    voice_chat: "Chat de voz",
+    premium_feature: "Recurso Premium",
+    upgrade_to_unlock: "Atualize para Premium para desbloquear o chat de voz",
+    save_changes: "Salvar alterações",
+    saving: "Salvando…",
   },
   ar: {
     welcome_back: "مرحباً بعودتك، {name} ✨",

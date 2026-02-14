@@ -35,6 +35,7 @@ export function useVoice(language: string = "en"): UseVoiceReturn {
     en: "en-US",
     fr: "fr-FR",
     es: "es-ES",
+    pt: "pt-BR",
     ar: "ar-SA",
   };
 
