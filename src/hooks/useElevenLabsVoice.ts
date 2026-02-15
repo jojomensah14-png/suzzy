@@ -1,94 +1,106 @@
-import { useState, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback, useRef } from 'react';
 
-interface UseElevenLabsVoiceReturn {
-  isSpeaking: boolean;
-  speak: (text: string, language: string, onDone?: () => void) => Promise<void>;
-  stopSpeaking: () => void;
-  error: string | null;
+interface TTSOptions {
+  onStart?: () => void;
+  onDone?: () => void;
+  voiceId?: string;
 }
 
-export function useElevenLabsVoice(): UseElevenLabsVoiceReturn {
+export const useElevenLabsTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
+  const [error, setError] = useState(null);
+  const audioRef = useRef(null);
+
+  const speak = useCallback(async (text, options: TTSOptions = {}) => {
+    // CORRECT destructuring with curly braces
+    const { onStart, onDone, voiceId = '21m00Tcm4TlvDq8ikWAM' } = options;
+
+    if (!text?.trim()) {
+      setError('No text provided');
+      setIsSpeaking(false);
+      return;
+    }
+
+    // API key validation
+    if (!process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY) {
+      setError('ElevenLabs API key is not configured');
+      setIsSpeaking(false);
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      setError(null);
+      onStart?.();
+
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY, // THIS IS CRITICAL
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      await audio.play();
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        onDone?.();
+      };
+
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setError('Failed to play audio');
+        URL.revokeObjectURL(audioUrl);
+        onDone?.();
+      };
+
+    } catch (err) {
+      console.error("ElevenLabs TTS error:", err);
+      setError(err instanceof Error ? err.message : "Voice error");
+      setIsSpeaking(false);
+      onDone?.();
+    }
+  }, []);
 
   const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      
+      if (audioRef.current.src) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+      
       audioRef.current = null;
     }
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
+    
     setIsSpeaking(false);
   }, []);
 
-  const speak = useCallback(
-    async (text: string, language: string, onDone?: () => void) => {
-      stopSpeaking();
-      setError(null);
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) {
-          setError("Not authenticated");
-          onDone?.();
-          return;
-        }
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ text, language }),
-          }
-        );
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({ error: "Voice failed" }));
-          throw new Error(errData.error || `Error ${response.status}`);
-        }
-
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        objectUrlRef.current = audioUrl;
-
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        audio.onplay = () => setIsSpeaking(true);
-        audio.onended = () => {
-          setIsSpeaking(false);
-          if (objectUrlRef.current) {
-            URL.revokeObjectURL(objectUrlRef.current);
-            objectUrlRef.current = null;
-          }
-          onDone?.();
-        };
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          onDone?.();
-        };
-
-        await audio.play();
-      } catch (err) {
-        console.error("ElevenLabs TTS error:", err);
-        setError(err instanceof Error ? err.message : "Voice error");
-        setIsSpeaking(false);
-        onDone?.();
-      }
-    },
-    [stopSpeaking]
-  );
-
-  return { isSpeaking, speak, stopSpeaking, error };
-}
+  return { 
+    isSpeaking, 
+    speak, 
+    stopSpeaking, 
+    error 
+  };
+};
