@@ -1,9 +1,9 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@components/ui/toaster";
+import { Toaster as Sommer } from "@components/ui/sommer";
+import { TooltipProvider } from "@components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+import { HashRouter, Routes, Route } from "react-router-dom"; // Changed from BrowserRouter
+import { LanguageProvider } from "@contexts/LanguageContext";
 import Index from "./pages/Index";
 import SessionPage from "./pages/SessionPage";
 import AuthPage from "./pages/AuthPage";
@@ -20,21 +20,24 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <LanguageProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter basename="/suzzy">
+        <HashRouter> {/* Changed from BrowserRouter */}
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/session" element={<SessionPage />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/session" element={<ProtectedRoute><SessionPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
             <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/history" element={<ProtectedRoute><BeautyHistoryPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/beauty-history" element={<BeautyHistoryPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
+        <Toaster />
+        <Sommer />
       </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>

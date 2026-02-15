@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  base: '/suzzy/',
+  base: './', // Changed from '/suzzy/' to './' for HashRouter
   server: {
     host: "::",
     port: 8080,
